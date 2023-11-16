@@ -31,6 +31,7 @@ from fairseq.data import (
 
 from language_pair_dataset import LanguagePairDataset
 
+
 def load_langpair_dataset(
     data_path,
     split,
@@ -163,8 +164,8 @@ def load_langpair_dataset(
         src_with_werdur=src_with_werdur,
         append_eos_to_target=append_eos_to_target,
         bos_prepended_outside=prepend_bos,
-
     )
+
 
 @register_task("fastcorrect")
 class FastCorrectTask(TranslationTask):
@@ -332,7 +333,7 @@ class FastCorrectTask(TranslationTask):
             retain_history=getattr(args, "retain_iter_history", False),
             edit_thre=getattr(args, "edit_thre", 0.0),
             print_werdur=getattr(args, "print_werdur", False),
-            retain_dropout=getattr(args, "retain_dropout", False)
+            retain_dropout=getattr(args, "retain_dropout", False),
         )
 
     def build_dataset_for_inference(self, src_tokens, src_lengths, constraints=None):
@@ -343,7 +344,10 @@ class FastCorrectTask(TranslationTask):
             )
 
         return LanguagePairDataset(
-            src_tokens, src_lengths, self.source_dictionary, append_bos=True,
+            src_tokens,
+            src_lengths,
+            self.source_dictionary,
+            append_bos=True,
         )
 
     def train_step(
@@ -365,9 +369,19 @@ class FastCorrectTask(TranslationTask):
         return loss, sample_size, logging_output
 
     def inference_step(
-        self, generator, models, sample, prefix_tokens=None, constraints=None, werdur_gt_str="",
+        self,
+        generator,
+        models,
+        sample,
+        prefix_tokens=None,
+        constraints=None,
+        werdur_gt_str="",
     ):
         with torch.no_grad():
             return generator.generate(
-               models, sample, prefix_tokens=prefix_tokens, constraints=constraints, werdur_gt_str=werdur_gt_str)
-
+                models,
+                sample,
+                prefix_tokens=prefix_tokens,
+                constraints=constraints,
+                werdur_gt_str=werdur_gt_str,
+            )

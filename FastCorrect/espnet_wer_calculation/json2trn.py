@@ -59,18 +59,16 @@ def convert(jsonf, dic, refs, hyps, num_spkrs=1):
         ref_file = codecs.open(refs[ns], "w", encoding="utf-8")
 
         for x in j["utts"]:
-            #hack here
+            # hack here
             if "utt2spk" not in j["utts"][x].keys():
-                 j["utts"][x]["utt2spk"] = x[6:11]
+                j["utts"][x]["utt2spk"] = x[6:11]
             # recognition hypothesis
             if num_spkrs == 1:
-                seq = [
-                    i for i in j["utts"][x]["output"][0]["rec_token"].split()
-                ]
-                #seq = [
+                seq = [i for i in j["utts"][x]["output"][0]["rec_token"].split()]
+                # seq = [
                 #    char_list[int(i)]
                 #    for i in j["utts"][x]["output"][0]["rec_tokenid"].split()
-                #]
+                # ]
             else:
                 seq = [
                     char_list[int(i)]

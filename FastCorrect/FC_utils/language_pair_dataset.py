@@ -11,10 +11,11 @@ import logging
 import numpy as np
 import torch
 from fairseq.data import FairseqDataset, data_utils
-import random                                           
+import random
 import math
 
 logger = logging.getLogger(__name__)
+
 
 def collate_2d_tokens(
     values,
@@ -48,6 +49,7 @@ def collate_2d_tokens(
     for i, v in enumerate(values):
         copy_tensor(v, res[i][size - len(v) :] if left_pad else res[i][: len(v)])
     return res
+
 
 def collate(
     samples,
@@ -141,13 +143,17 @@ def collate(
         wer_dur = merge(
             "wer_dur",
             left_pad=left_pad_source,
-            pad_to_length=pad_to_length["source"] if pad_to_length is not None else None,
+            pad_to_length=pad_to_length["source"]
+            if pad_to_length is not None
+            else None,
         )
         wer_dur = wer_dur.index_select(0, sort_order)
         to_be_edited = merge(
             "to_be_edited",
             left_pad=left_pad_source,
-            pad_to_length=pad_to_length["source"] if pad_to_length is not None else None,
+            pad_to_length=pad_to_length["source"]
+            if pad_to_length is not None
+            else None,
         )
         to_be_edited = to_be_edited.index_select(0, sort_order)
 
@@ -397,11 +403,8 @@ class LanguagePairDataset(FairseqDataset):
         self.src_with_werdur = src_with_werdur
         self.bos_prepended_outside = bos_prepended_outside
 
-
     def get_batch_shapes(self):
         return self.buckets
-
-
 
     def __getitem__(self, index):
         tgt_item = self.tgt[index] if self.tgt is not None else None
@@ -429,21 +432,20 @@ class LanguagePairDataset(FairseqDataset):
             if self.src[index][-1] == eos:
                 src_item = self.src[index][:-1]
 
-
         if self.src_with_werdur:
-            # assert not 
+            # assert not
             src_item_length = int(len(src_item))
-            #print(src_item_length, src_item)
+            # print(src_item_length, src_item)
             if self.append_bos or self.bos_prepended_outside:  # origin 8, append_bos: 9
                 assert src_item_length % 2 == 1
-                werdur_info = src_item[(src_item_length+1)//2:].clone() - 32768
+                werdur_info = src_item[(src_item_length + 1) // 2 :].clone() - 32768
                 werdur_info = torch.cat([torch.LongTensor([1]), werdur_info], dim=-1)
-                src_item = src_item[:(src_item_length+1)//2]
+                src_item = src_item[: (src_item_length + 1) // 2]
             else:
                 assert src_item_length % 2 == 0
-                werdur_info = src_item[(src_item_length)//2:].clone() - 32768
+                werdur_info = src_item[(src_item_length) // 2 :].clone() - 32768
                 # werdur_info = torch.cat([torch.LongTensor([1]), werdur_info], dim=-1)
-                src_item = src_item[:(src_item_length)//2]
+                src_item = src_item[: (src_item_length) // 2]
 
             to_be_edited = werdur_info.clamp(0, 1)
             wer_dur = torch.abs(werdur_info)

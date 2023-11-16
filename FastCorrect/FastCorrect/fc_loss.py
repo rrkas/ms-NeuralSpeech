@@ -106,7 +106,15 @@ class FastCorrectCriterion(FairseqCriterion):
             to_be_edited = None
             for_wer_gather = None
         tgt_tokens, prev_output_tokens = sample["target"], sample["prev_target"]
-        outputs = model(src_tokens, src_lengths, prev_output_tokens, tgt_tokens, wer_dur, to_be_edited, for_wer_gather)
+        outputs = model(
+            src_tokens,
+            src_lengths,
+            prev_output_tokens,
+            tgt_tokens,
+            wer_dur,
+            to_be_edited,
+            for_wer_gather,
+        )
         losses, nll_loss = [], []
 
         for obj in outputs:
@@ -133,8 +141,8 @@ class FastCorrectCriterion(FairseqCriterion):
 
         loss = sum(l["loss"] for l in losses)
         nll_loss = sum(l for l in nll_loss) if len(nll_loss) > 0 else loss.new_tensor(0)
-        #print("loss, nll_loss", loss, nll_loss)
-        #for l in losses:
+        # print("loss, nll_loss", loss, nll_loss)
+        # for l in losses:
         #    print(l['name'], l['loss'], utils.item(l["loss"].data / l["factor"]))
         # NOTE:
         # we don't need to use sample_size as denominator for the gradient

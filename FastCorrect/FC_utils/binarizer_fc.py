@@ -53,7 +53,9 @@ class Binarizer:
                 if end > 0 and f.tell() > end:
                     break
                 if already_numberized:
-                    assert ' |||| ' not in line, "This constraint is add when doing asr correction exp"
+                    assert (
+                        " |||| " not in line
+                    ), "This constraint is add when doing asr correction exp"
                     id_strings = line.strip().split()
                     id_list = [int(id_string) for id_string in id_strings]
                     if reverse_order:
@@ -62,9 +64,9 @@ class Binarizer:
                         id_list.append(dict.eos())
                     ids = torch.IntTensor(id_list)
                 else:
-                    if ' |||| ' in line:
+                    if " |||| " in line:
                         assert src_with_werdur
-                        line, werdur_info = line.split(' |||| ')
+                        line, werdur_info = line.split(" |||| ")
                         werdur_list = []
                         for i in werdur_info.strip().split():
                             assert abs(int(i)) < 30000

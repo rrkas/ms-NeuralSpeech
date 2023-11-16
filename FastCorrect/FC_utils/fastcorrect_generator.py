@@ -15,7 +15,16 @@ import time
 
 DecoderOut = namedtuple(
     "FastCorrectDecoderOut",
-    ["output_tokens", "output_scores", "attn", "step", "max_step", "history", "to_be_edited_pred", "wer_dur_pred"],
+    [
+        "output_tokens",
+        "output_scores",
+        "attn",
+        "step",
+        "max_step",
+        "history",
+        "to_be_edited_pred",
+        "wer_dur_pred",
+    ],
 )
 
 
@@ -34,7 +43,7 @@ class FastCorrectGenerator(object):
         retain_history=False,
         reranking=False,
         edit_thre=0.0,
-        print_werdur=False
+        print_werdur=False,
     ):
         """
         Generates translations based on iterative refinement.
@@ -106,7 +115,9 @@ class FastCorrectGenerator(object):
                 yield id, src, ref, hypos[i]
 
     @torch.no_grad()
-    def generate(self, models, sample, prefix_tokens=None, constraints=None, werdur_gt_str=""):
+    def generate(
+        self, models, sample, prefix_tokens=None, constraints=None, werdur_gt_str=""
+    ):
         if constraints is not None:
             raise NotImplementedError(
                 "Constrained decoding with the IterativeRefinementGenerator is not supported"
@@ -142,11 +153,21 @@ class FastCorrectGenerator(object):
         # print("before encoder:", time.time())
         encoder_out = model.forward_encoder([src_tokens, src_lengths])
         # print("before werdur:", time.time())
-        if getattr(model.decoder, "wer_dur_weight", None) or getattr(model.decoder, "dur_predictor", None):
-            prev_decoder_out, encoder_out = model.initialize_output_tokens(encoder_out, src_tokens, self.edit_thre, self.print_werdur, werdur_gt_str=werdur_gt_str)
+        if getattr(model.decoder, "wer_dur_weight", None) or getattr(
+            model.decoder, "dur_predictor", None
+        ):
+            prev_decoder_out, encoder_out = model.initialize_output_tokens(
+                encoder_out,
+                src_tokens,
+                self.edit_thre,
+                self.print_werdur,
+                werdur_gt_str=werdur_gt_str,
+            )
         else:
-            #raise ValueError("Remove this after debugging")
-            prev_decoder_out, encoder_out = model.initialize_output_tokens(encoder_out, src_tokens)
+            # raise ValueError("Remove this after debugging")
+            prev_decoder_out, encoder_out = model.initialize_output_tokens(
+                encoder_out, src_tokens
+            )
         # print("before decoder:", time.time())
         if self.beam_size > 1:
             assert (
@@ -210,7 +231,6 @@ class FastCorrectGenerator(object):
             }
 
         for step in range(self.max_iter + 1):
-
             decoder_options = {
                 "eos_penalty": self.eos_penalty,
                 "max_ratio": self.max_ratio,

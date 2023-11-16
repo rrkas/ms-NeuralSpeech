@@ -1,0 +1,5 @@
+black==23.11.0
+fairseq==0.12.2
+pandas==2.1.2
+pip-chill==1.0.3
+wikiextractor==3.0.6

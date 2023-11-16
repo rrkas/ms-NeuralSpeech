@@ -1,0 +1,10 @@
+data/*.zip
+data/text/
+data/noisy_text/
+
+
+sctk-2.4.10-20151007-1312Z.tar.bz2
+sctk*/
+sctk
+fairseq
+

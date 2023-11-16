@@ -70,7 +70,6 @@ def from_pretrained(
     if "user_dir" in kwargs:
         utils.import_user_module(argparse.Namespace(user_dir=kwargs["user_dir"]))
 
-
     models, args, task = checkpoint_utils.load_model_ensemble_and_task(
         [os.path.join(model_path, cpt) for cpt in checkpoint_file.split(os.pathsep)],
         arg_overrides=kwargs,
@@ -128,10 +127,14 @@ class GeneratorHubInterface(nn.Module):
         self, sentences: List[str], beam: int = 1, verbose: bool = False, **kwargs
     ) -> List[str]:
         if isinstance(sentences, str):
-            exc_text, exc_time = self.sample([sentences], beam=beam, verbose=verbose, **kwargs)
+            exc_text, exc_time = self.sample(
+                [sentences], beam=beam, verbose=verbose, **kwargs
+            )
             return exc_text[0], exc_time
         tokenized_sentences = [self.encode(sentence) for sentence in sentences]
-        batched_hypos, exc_time = self.generate(tokenized_sentences, beam, verbose, **kwargs)
+        batched_hypos, exc_time = self.generate(
+            tokenized_sentences, beam, verbose, **kwargs
+        )
         return [self.decode(hypos[0]["tokens"]) for hypos in batched_hypos], exc_time
 
     def score(self, sentences: List[str], **kwargs):

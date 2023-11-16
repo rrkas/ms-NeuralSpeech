@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-#Usage python align_cal_werdur_v2.py <input-tokened-hypo-text-file> <input-tokened-ref-text-file>
-#Note:
+# Usage python align_cal_werdur_v2.py <input-tokened-hypo-text-file> <input-tokened-ref-text-file>
+# Note:
 #  The script will align <input-tokened-hypo-text-file> (text with errors) with <input-tokened-ref-text-file> (ground-truth text) and obtain the number of target token corresponding with each source token
 #  The script might skip sentence which takes too much time for alignment.
 #  The aligned result of <input-tokened-hypo-text-file> is in <input-tokened-hypo-text-file>.src.werdur.full, which consists of source tokens with their duration.
@@ -16,6 +16,7 @@ import random
 
 import signal
 import time
+
 
 def set_timeout(num, callback):
     def wrap(func):
@@ -38,10 +39,9 @@ def set_timeout(num, callback):
 
     return wrap
 
+
 def after_timeout():
     pass
-
-
 
 
 hypo_file = sys.argv[1]
@@ -50,14 +50,15 @@ all_hypo_line = []
 all_ref_line = []
 
 print("Loading: ", hypo_file)
-with open(hypo_file, 'r', encoding='utf-8') as infile:
+with open(hypo_file, "r", encoding="utf-8") as infile:
     for line in infile.readlines():
         all_hypo_line.append(line.strip().split())
 
 print("Loading: ", ref_file)
-with open(ref_file, 'r', encoding='utf-8') as infile:
+with open(ref_file, "r", encoding="utf-8") as infile:
     for line in infile.readlines():
         all_ref_line.append(line.strip().split())
+
 
 def init_number_vec(len_hyp, len_ref):
     return_vec = []
@@ -112,7 +113,7 @@ def calculate_wer_dur(hypo_list, ref_list):
         i_idx = max(0, i)
         j_idx = max(0, j)
 
-        if ops_matrix[i_idx][j_idx] == 0: 
+        if ops_matrix[i_idx][j_idx] == 0:
             if i - 1 >= 0 and j - 1 >= 0:
                 current_chars.append(ref_list[j - 1])
                 char_map.append([hypo_list[i - 1], current_chars])
@@ -121,14 +122,14 @@ def calculate_wer_dur(hypo_list, ref_list):
             i -= 1
             j -= 1
 
-        elif ops_matrix[i_idx][j_idx] == 2: 
+        elif ops_matrix[i_idx][j_idx] == 2:
             char_map.append([hypo_list[i - 1], current_chars])
             current_chars = []
             i -= 1
-        elif ops_matrix[i_idx][j_idx] == 3: 
+        elif ops_matrix[i_idx][j_idx] == 3:
             current_chars.append(ref_list[j - 1])
             j -= 1
-        elif ops_matrix[i_idx][j_idx] == 1: 
+        elif ops_matrix[i_idx][j_idx] == 1:
             current_chars.append(ref_list[j - 1])
             char_map.append([hypo_list[i - 1], current_chars])
             current_chars = []
@@ -175,12 +176,12 @@ def calculate_wer_dur(hypo_list, ref_list):
         src_string = ""
         tgt_string = ""
         for i in char_map:
-            if (len(i[1]) == 1 and i[1][0] == i[0]):
-                src_string += (" " + i[0])
-                tgt_string += (" " + i[1][0])
+            if len(i[1]) == 1 and i[1][0] == i[0]:
+                src_string += " " + i[0]
+                tgt_string += " " + i[1][0]
             else:
-                src_string += (" " + i[0])
-                tgt_string += (" | " + " ".join(i[1]) + " |")
+                src_string += " " + i[0]
+                tgt_string += " | " + " ".join(i[1]) + " |"
         print(src_string)
         print(tgt_string)
 
@@ -206,6 +207,7 @@ def judge_stage(late_stage, early_stage):
     else:
         return 3
 
+
 def cal_charwer(hypo_string, ref_string):
     hypo_string = "".join(hypo_string.strip().split())
     ref_string = "".join(ref_string.strip().split())
@@ -215,9 +217,13 @@ def cal_charwer(hypo_string, ref_string):
         return len(hypo_string)
     len_hyp = len(hypo_string)
     len_ref = len(ref_string)
-    cost_matrix = init_number_vec(len_hyp + 1, len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    cost_matrix = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
 
-    ops_matrix = init_number_vec(len_hyp + 1, len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int8)
+    ops_matrix = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int8)
 
     for i in range(len_hyp + 1):
         cost_matrix[i][0] = i
@@ -250,36 +256,39 @@ def cal_charwer(hypo_string, ref_string):
                 ops_matrix[i][j] = operation_idx
     return cost_matrix[len_hyp][len_ref]
 
+
 def cal_charwer_zh(hypo_string, ref_string):
     return 0
 
+
 # The format of gramx.txt is <space-split ngram token> \t frequency
-# such as: 
+# such as:
 # good morning\t1000\n
 # the gramx.txt can be calculated based on unpaired text data.
 
-#gram2_path = '<path-to-gram2>/gram2.txt'
+# gram2_path = '<path-to-gram2>/gram2.txt'
 # print("Loading gram2:", gram2_path)
 gram2_dict = {}
-#with open(gram2_path, 'r',
+# with open(gram2_path, 'r',
 #          encoding='utf-8') as infile:
 #    for i, line in enumerate(infile.readlines()):
 #        gram2_dict[line.strip().split('\t')[0]] = int(line.strip().split('\t')[1])
 #        if i % 1000000 == 0:
 #            print(i, 'loaded!')
 
-#gram3_path = '<path-to-gram2>/gram3.txt'
+# gram3_path = '<path-to-gram2>/gram3.txt'
 # print("Loading gram3:", gram3_path)
 gram3_dict = {}
-#with open(gram3_path, 'r',
+# with open(gram3_path, 'r',
 #          encoding='utf-8') as infile:
 #    for i, line in enumerate(infile.readlines()):
 #        gram3_dict[line.strip().split('\t')[0]] = int(line.strip().split('\t')[1])
 #        if i % 2000000 == 0:
 #            print(i, 'loaded!')
 
-#MAX_OCC = max(max(gram2_dict.values()), max(gram3_dict.values()))
-MAX_OCC=100
+# MAX_OCC = max(max(gram2_dict.values()), max(gram3_dict.values()))
+MAX_OCC = 100
+
 
 def get_lm_score(tokens):
     if len(tokens) == 2:
@@ -294,36 +303,67 @@ def is_identity_token(token):
     return token[0] == token[1]
 
 
-
 def judge_insertion(path, insert_begin, insert_end):
     assert insert_begin >= 1
     assert insert_end <= len(path) - 2
     left_token = path[insert_begin - 1]
     right_token = path[insert_end + 1]
-    to_be_align = path[insert_begin: insert_end + 1]
+    to_be_align = path[insert_begin : insert_end + 1]
     if is_identity_token(left_token) and not is_identity_token(right_token):
-        return cal_charwer_zh(right_token[0],
-                           "".join([j[1] for j in to_be_align] + [right_token[1]])), MAX_OCC * 100, [], [j[1] for j in
-                                                                                                         to_be_align]
+        return (
+            cal_charwer_zh(
+                right_token[0], "".join([j[1] for j in to_be_align] + [right_token[1]])
+            ),
+            MAX_OCC * 100,
+            [],
+            [j[1] for j in to_be_align],
+        )
     elif (not is_identity_token(left_token) and is_identity_token(right_token)) or (
-            insert_begin == insert_end and right_token[0].startswith('▁') and '▁' not in path[insert_begin]):
-        return cal_charwer_zh(left_token[0], "".join([left_token[1]] + [j[1] for j in to_be_align])), MAX_OCC * 100, [j[1]
-                                                                                                                   for j
-                                                                                                                   in
-                                                                                                                   to_be_align], []
+        insert_begin == insert_end
+        and right_token[0].startswith("▁")
+        and "▁" not in path[insert_begin]
+    ):
+        return (
+            cal_charwer_zh(
+                left_token[0], "".join([left_token[1]] + [j[1] for j in to_be_align])
+            ),
+            MAX_OCC * 100,
+            [j[1] for j in to_be_align],
+            [],
+        )
     elif is_identity_token(left_token) and is_identity_token(right_token):
         all_charwer = [1000 for i in range(insert_end - insert_begin + 2)]
-        all_charwer[0] = cal_charwer_zh(right_token[0], "".join([j[1] for j in to_be_align] + [right_token[1]]))
-        all_charwer[-1] = cal_charwer_zh(left_token[0], "".join([left_token[1]] + [j[1] for j in to_be_align]))
+        all_charwer[0] = cal_charwer_zh(
+            right_token[0], "".join([j[1] for j in to_be_align] + [right_token[1]])
+        )
+        all_charwer[-1] = cal_charwer_zh(
+            left_token[0], "".join([left_token[1]] + [j[1] for j in to_be_align])
+        )
         if len(all_charwer) == 3:
             assert len(to_be_align) == 2
-            all_charwer[1] = cal_charwer_zh(left_token[0], "".join([left_token[1]] + [j[1] for j in to_be_align[:1]])) + cal_charwer_zh(right_token[0], "".join([j[1] for j in to_be_align[1:]] + [right_token[1]]))
+            all_charwer[1] = cal_charwer_zh(
+                left_token[0],
+                "".join([left_token[1]] + [j[1] for j in to_be_align[:1]]),
+            ) + cal_charwer_zh(
+                right_token[0],
+                "".join([j[1] for j in to_be_align[1:]] + [right_token[1]]),
+            )
         elif len(all_charwer) > 3:
             assert len(to_be_align) > 2
-            all_charwer[1] = cal_charwer_zh(left_token[0], "".join([left_token[1]] + [j[1] for j in to_be_align[:1]])) + cal_charwer_zh(right_token[0], "".join([j[1] for j in to_be_align[1:]] + [right_token[1]]))
-            all_charwer[-2] = cal_charwer_zh(left_token[0],
-                                         "".join([left_token[1]] + [j[1] for j in to_be_align[:-1]])) + cal_charwer_zh(
-                right_token[0], "".join([j[1] for j in to_be_align[-1:]] + [right_token[1]]))
+            all_charwer[1] = cal_charwer_zh(
+                left_token[0],
+                "".join([left_token[1]] + [j[1] for j in to_be_align[:1]]),
+            ) + cal_charwer_zh(
+                right_token[0],
+                "".join([j[1] for j in to_be_align[1:]] + [right_token[1]]),
+            )
+            all_charwer[-2] = cal_charwer_zh(
+                left_token[0],
+                "".join([left_token[1]] + [j[1] for j in to_be_align[:-1]]),
+            ) + cal_charwer_zh(
+                right_token[0],
+                "".join([j[1] for j in to_be_align[-1:]] + [right_token[1]]),
+            )
         else:
             # do not calculate more than 4 gram
             pass
@@ -331,7 +371,11 @@ def judge_insertion(path, insert_begin, insert_end):
         min_charwer = min(all_charwer)
         # print(path, insert_begin, insert_end)
         # print(all_charwer)
-        for_lmrerank = [i for i in range(insert_end - insert_begin + 2) if all_charwer[i] == min_charwer]
+        for_lmrerank = [
+            i
+            for i in range(insert_end - insert_begin + 2)
+            if all_charwer[i] == min_charwer
+        ]
         if len(for_lmrerank) > 1:
             # print("Use lm to judge {} from position {}".format(path, for_lmrerank))
             all_lm_score = []
@@ -339,12 +383,15 @@ def judge_insertion(path, insert_begin, insert_end):
                 all_lm_score.append(
                     get_lm_score(
                         [left_token[1]] + [j[1] for j in to_be_align[:iter_choice]]
-                    ) + get_lm_score(
+                    )
+                    + get_lm_score(
                         [j[1] for j in to_be_align[iter_choice:]] + [right_token[1]]
                     )
                 )
             max_lm_score = max(all_lm_score)
-            max_lm_id = [i for i, j in zip(for_lmrerank, all_lm_score) if j == max_lm_score]
+            max_lm_id = [
+                i for i, j in zip(for_lmrerank, all_lm_score) if j == max_lm_score
+            ]
             half_value = (insert_end - insert_begin + 2) / 2 - 0.01
             final_choice = max_lm_id[0]
             dis2centor = (final_choice - half_value) ** 2
@@ -355,32 +402,43 @@ def judge_insertion(path, insert_begin, insert_end):
         else:
             max_lm_score = MAX_OCC * 100
             final_choice = for_lmrerank[0]
-        return min_charwer, max_lm_score, [j[1] for j in to_be_align[:final_choice]], [j[1] for j in
-                                                                                       to_be_align[final_choice:]]
+        return (
+            min_charwer,
+            max_lm_score,
+            [j[1] for j in to_be_align[:final_choice]],
+            [j[1] for j in to_be_align[final_choice:]],
+        )
     else:
         all_charwer = [0 for i in range(insert_end - insert_begin + 2)]
         for i in range(insert_end - insert_begin + 2):
-            all_charwer[i] = cal_charwer_zh(left_token[0], "".join(
-                [left_token[1]] + [j[1] for j in to_be_align[:i]]
+            all_charwer[i] = cal_charwer_zh(
+                left_token[0],
+                "".join([left_token[1]] + [j[1] for j in to_be_align[:i]]),
+            ) + cal_charwer_zh(
+                right_token[0],
+                "".join([j[1] for j in to_be_align[i:]] + [right_token[1]]),
             )
-                                         ) + cal_charwer_zh(right_token[0], "".join(
-                [j[1] for j in to_be_align[i:]] + [right_token[1]]
-            )
-                                                         )
         min_charwer = min(all_charwer)
-        for_lmrerank = [i for i in range(insert_end - insert_begin + 2) if all_charwer[i] == min_charwer]
+        for_lmrerank = [
+            i
+            for i in range(insert_end - insert_begin + 2)
+            if all_charwer[i] == min_charwer
+        ]
         if len(for_lmrerank) > 1:
             all_lm_score = []
             for iter_choice in for_lmrerank:
                 all_lm_score.append(
                     get_lm_score(
                         [left_token[1]] + [j[1] for j in to_be_align[:iter_choice]]
-                    ) + get_lm_score(
+                    )
+                    + get_lm_score(
                         [j[1] for j in to_be_align[iter_choice:]] + [right_token[1]]
                     )
                 )
             max_lm_score = max(all_lm_score)
-            max_lm_id = [i for i, j in zip(for_lmrerank, all_lm_score) if j == max_lm_score]
+            max_lm_id = [
+                i for i, j in zip(for_lmrerank, all_lm_score) if j == max_lm_score
+            ]
             half_value = (insert_end - insert_begin + 2) / 2 - 0.01
             final_choice = max_lm_id[0]
             dis2centor = (final_choice - half_value) ** 2
@@ -391,8 +449,12 @@ def judge_insertion(path, insert_begin, insert_end):
         else:
             max_lm_score = MAX_OCC * 100
             final_choice = for_lmrerank[0]
-        return min_charwer, max_lm_score, [j[1] for j in to_be_align[:final_choice]], [j[1] for j in
-                                                                                       to_be_align[final_choice:]]
+        return (
+            min_charwer,
+            max_lm_score,
+            [j[1] for j in to_be_align[:final_choice]],
+            [j[1] for j in to_be_align[final_choice:]],
+        )
 
 
 def cal_min_align(path):
@@ -429,7 +491,9 @@ def cal_min_align(path):
             while not path[i][0]:
                 i += 1
             insert_end = i - 1
-            _, new_lm_score, left_align, right_align = judge_insertion(path, insert_begin, insert_end)
+            _, new_lm_score, left_align, right_align = judge_insertion(
+                path, insert_begin, insert_end
+            )
             return_match[index_match - 1][1].extend(left_align)
             return_match[index_match][1].extend(right_align)
             # print(index_match, return_match, left_align, right_align)
@@ -444,15 +508,19 @@ def cal_min_align(path):
 def calculate_wer_dur_1beam(hypo_list, ref_list):
     len_hyp = len(hypo_list)
     len_ref = len(ref_list)
-    cost_matrix = init_number_vec(len_hyp + 1, len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    cost_matrix = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
 
     forward_matrix = init_vec(len_hyp + 1, len_ref + 1)
     backward_matrix = init_vec(len_hyp + 1, len_ref + 1)
 
-    path_num_matrix_for = init_number_vec(len_hyp + 1,
-                                          len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
-    path_num_matrix_back = init_number_vec(len_hyp + 1,
-                                           len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    path_num_matrix_for = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    path_num_matrix_back = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
 
     # 0-equal；2-insertion；3-deletion；1-substitution
     # ops_matrix = np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int8)
@@ -526,8 +594,9 @@ def calculate_wer_dur_1beam(hypo_list, ref_list):
             all_back_weight.append(path_num_matrix_for[i[0]][i[1]])
         for i in range(len(all_back_stage)):
             new_stage = all_back_stage[i]
-            path_num_matrix_back[new_stage[0]][new_stage[1]] += currect_path / (sum(all_back_weight)) * all_back_weight[
-                i]
+            path_num_matrix_back[new_stage[0]][new_stage[1]] += (
+                currect_path / (sum(all_back_weight)) * all_back_weight[i]
+            )
             if new_stage != [0, 0] and new_stage not in stack:
                 insert_index = 0
                 if not stack:
@@ -561,7 +630,9 @@ def calculate_wer_dur_1beam(hypo_list, ref_list):
                     new_identity = all_path_identity[path_id]
                     op_type = judge_stage(currect_stage, new_stage)
                     if op_type == 1:
-                        new_path.append((hypo_list[new_stage[0]], ref_list[new_stage[1]]))
+                        new_path.append(
+                            (hypo_list[new_stage[0]], ref_list[new_stage[1]])
+                        )
                         if hypo_list[new_stage[0]] == ref_list[new_stage[1]]:
                             new_identity += 1
                     elif op_type == 2:
@@ -587,7 +658,9 @@ def calculate_wer_dur_1beam(hypo_list, ref_list):
         for path_id in path_id_matrix[currect_stage[0]][currect_stage[1]]:
             op_type = judge_stage(currect_stage, new_stage)
             if op_type == 1:
-                all_path[path_id].append((hypo_list[new_stage[0]], ref_list[new_stage[1]]))
+                all_path[path_id].append(
+                    (hypo_list[new_stage[0]], ref_list[new_stage[1]])
+                )
                 if hypo_list[new_stage[0]] == ref_list[new_stage[1]]:
                     all_path_identity[path_id] += 1
             elif op_type == 2:
@@ -629,7 +702,9 @@ def calculate_wer_dur_1beam(hypo_list, ref_list):
     best_path = None
     for path in path4rerank:
         path_char_wer, char_wer, lm_score, match_case = cal_min_align(path)
-        final_id_score = sum([int(len(i[1]) == 1 and i[0] == i[1][0]) for i in match_case])
+        final_id_score = sum(
+            [int(len(i[1]) == 1 and i[0] == i[1][0]) for i in match_case]
+        )
         path_id_scores.append(final_id_score)
         path_scores.append((char_wer, path_char_wer, lm_score))
         path_matchs.append(match_case)
@@ -664,15 +739,19 @@ def calculate_wer_dur_1beam(hypo_list, ref_list):
 def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
     len_hyp = len(hypo_list)
     len_ref = len(ref_list)
-    cost_matrix = init_number_vec(len_hyp + 1, len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    cost_matrix = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
 
     forward_matrix = init_vec(len_hyp + 1, len_ref + 1)
     backward_matrix = init_vec(len_hyp + 1, len_ref + 1)
 
-    path_num_matrix_for = init_number_vec(len_hyp + 1,
-                                          len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
-    path_num_matrix_back = init_number_vec(len_hyp + 1,
-                                           len_ref + 1)  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    path_num_matrix_for = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
+    path_num_matrix_back = init_number_vec(
+        len_hyp + 1, len_ref + 1
+    )  # np.zeros((len_hyp + 1, len_ref + 1), dtype=np.int16)
 
     cost_matrix[0][0] = 0
     path_num_matrix_for[0][0] = 1
@@ -741,8 +820,9 @@ def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
             all_back_weight.append(path_num_matrix_for[i[0]][i[1]])
         for i in range(len(all_back_stage)):
             new_stage = all_back_stage[i]
-            path_num_matrix_back[new_stage[0]][new_stage[1]] += currect_path / (sum(all_back_weight)) * all_back_weight[
-                i]
+            path_num_matrix_back[new_stage[0]][new_stage[1]] += (
+                currect_path / (sum(all_back_weight)) * all_back_weight[i]
+            )
             if new_stage != [0, 0] and new_stage not in stack:
                 insert_index = 0
                 if not stack:
@@ -771,10 +851,15 @@ def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
         all_split = [(0, 0)]
         for i in range(2, len(all_dia_value) - 1):
             if (all_dia_value[i - 1][0] - all_dia_value[i - 2][0] > 1) or (
-                    all_dia_value[i - 1][1] - all_dia_value[i - 2][1] > 1):
+                all_dia_value[i - 1][1] - all_dia_value[i - 2][1] > 1
+            ):
                 if (all_dia_value[i][0] - all_dia_value[i - 1][0] == 1) or (
-                        all_dia_value[i][1] - all_dia_value[i - 1][1] == 1):
-                    if hypo_list[all_dia_value[i][0] - 1] == ref_list[all_dia_value[i][1] - 1]:
+                    all_dia_value[i][1] - all_dia_value[i - 1][1] == 1
+                ):
+                    if (
+                        hypo_list[all_dia_value[i][0] - 1]
+                        == ref_list[all_dia_value[i][1] - 1]
+                    ):
                         all_split.append(all_dia_value[i])
         all_split.append((len_hyp, len_ref))
 
@@ -784,7 +869,12 @@ def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
             hypo_start = 0
             ref_start = 0
             for i in range(1, len(all_split) - 1):
-                all_parts.append((hypo_list[hypo_start:all_split[i][0]], ref_list[ref_start:all_split[i][1]]))
+                all_parts.append(
+                    (
+                        hypo_list[hypo_start : all_split[i][0]],
+                        ref_list[ref_start : all_split[i][1]],
+                    )
+                )
                 hypo_start = all_split[i][0] - 1
                 ref_start = all_split[i][1] - 1
             all_parts.append((hypo_list[hypo_start:], ref_list[ref_start:]))
@@ -793,7 +883,9 @@ def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
     # print(all_parts)
 
     if len(all_parts) == 1:
-        final_match, final_best_path, final_min_path_char_wer = calculate_wer_dur_1beam(all_parts[0][0], all_parts[0][1])
+        final_match, final_best_path, final_min_path_char_wer = calculate_wer_dur_1beam(
+            all_parts[0][0], all_parts[0][1]
+        )
     else:
         all_inter_results = [calculate_wer_dur_1beam(i[0], i[1]) for i in all_parts]
         all_parts_match = [i[0] for i in all_inter_results]
@@ -805,20 +897,31 @@ def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
                 if all_parts_match[i][-1][1]:
                     assert all_parts_match[i][-1][0] == all_parts_match[i][-1][1][-1]
                 if i != 0:
-                    assert all_final_best_path[i][0] == all_final_best_path[i-1][-1]
+                    assert all_final_best_path[i][0] == all_final_best_path[i - 1][-1]
                 # assert len(all_parts_match[i][-1][1]) == 1
             except:
                 raise_again = True
                 if all_parts_match[i][-1][1]:
                     assert all_parts_match[i][-1][0] == all_parts_match[i][-1][1][-1]
                 if i != 0:
-                    assert all_final_best_path[i][0] != all_final_best_path[i-1][-1]
-                    assert (all_final_best_path[i][0][0] != [] or all_final_best_path[i][0][1] != [])
-                    assert (all_final_best_path[i-1][-1][0] != [] or all_final_best_path[i-1][-1][1] != [])
-                    assert not (is_identity_token(all_final_best_path[i][0]) and is_identity_token(all_final_best_path[i-1][-1]))
-                    if is_identity_token(all_final_best_path[i-1][-1]):
-                        tmp_token = copy.deepcopy(all_final_best_path[i-1][-1])
-                        all_final_best_path[i-1][-1] = copy.deepcopy(all_final_best_path[i][0])
+                    assert all_final_best_path[i][0] != all_final_best_path[i - 1][-1]
+                    assert (
+                        all_final_best_path[i][0][0] != []
+                        or all_final_best_path[i][0][1] != []
+                    )
+                    assert (
+                        all_final_best_path[i - 1][-1][0] != []
+                        or all_final_best_path[i - 1][-1][1] != []
+                    )
+                    assert not (
+                        is_identity_token(all_final_best_path[i][0])
+                        and is_identity_token(all_final_best_path[i - 1][-1])
+                    )
+                    if is_identity_token(all_final_best_path[i - 1][-1]):
+                        tmp_token = copy.deepcopy(all_final_best_path[i - 1][-1])
+                        all_final_best_path[i - 1][-1] = copy.deepcopy(
+                            all_final_best_path[i][0]
+                        )
                         all_final_best_path[i][0] = tmp_token
                         raise_again = False
                     elif is_identity_token(all_final_best_path[i][0]):
@@ -856,24 +959,27 @@ def calculate_wer_dur_v1(hypo_list, ref_list, return_path_only=False):
     result_map = [len(i[1]) for i in final_match]
     to_be_modify = []
     for i in final_match:
-        if (len(i[1]) == 1 and i[1][0] == i[0]):
+        if len(i[1]) == 1 and i[1][0] == i[0]:
             to_be_modify.append(1)
         else:
             to_be_modify.append(-1)
 
-    assert sum(result_map) == len_ref, "{}, {}, {}".format(str(final_match), str(hypo_list), str(ref_list))
+    assert sum(result_map) == len_ref, "{}, {}, {}".format(
+        str(final_match), str(hypo_list), str(ref_list)
+    )
     assert len(result_map) == len_hyp
 
     return [i * j for i, j in zip(result_map, to_be_modify)], final_min_path_char_wer
+
 
 def cal_token_char_num(sentence):
     token_num = len(sentence)
     char_num = len("".join(sentence))
     return token_num * 1000 + char_num
 
+
 @set_timeout(30, after_timeout)  # 30s limitation for align
 def align_encoder(hypo_sen, ref_sen):
-
     werdur, _ = calculate_wer_dur_v1(hypo_sen, ref_sen, return_path_only=False)
     output_token_str = " ".join(hypo_sen)
     output_werdur_str = " ".join([str(m) for m in werdur])
@@ -881,23 +987,19 @@ def align_encoder(hypo_sen, ref_sen):
     assert len(werdur) == len(hypo_sen)
     assert len(ref_sen) == sum([abs(i) for i in werdur])
 
-
-
     output_src_str = output_token_str + " |||| " + output_werdur_str
     output_tgt_str = " ".join(ref_sen)
 
     return output_src_str, output_tgt_str
 
 
-
-
-
 import time
+
 start_time = time.time()
 count = 0
 count_no_skip = 0
-with open(ref_file + '.tgt', 'w', encoding='utf-8') as outfile_tgt:
-    with open(hypo_file + '.src.werdur.full', 'w', encoding='utf-8') as outfile_full:
+with open(ref_file + ".tgt", "w", encoding="utf-8") as outfile_tgt:
+    with open(hypo_file + ".src.werdur.full", "w", encoding="utf-8") as outfile_full:
         for hypo_list, ref_list in zip(all_hypo_line, all_ref_line):
             skip_this = False
             if not hypo_list:
@@ -919,4 +1021,3 @@ with open(ref_file + '.tgt', 'w', encoding='utf-8') as outfile_tgt:
                 print(count_no_skip, "not skipped!")
 
 print("Overall: {}/{} finished successful!".format(count_no_skip, count))
-
